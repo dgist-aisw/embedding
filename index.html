@@ -3,548 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Semantic Similarity — In-Browser Embedding Demo</title>
+<title>Multi-Model Semantic Comparison</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0c;
-    --surface: #131318;
-    --border: #1e1e26;
-    --text: #e8e6f0;
-    --text-dim: #6b6880;
-    --accent: #7c6aef;
-    --accent-glow: rgba(124, 106, 239, 0.15);
-    --warm: #f0a060;
-    --cool: #5080e0;
-    --green: #50d080;
-    --red: #e05060;
+    --bg: #0a0a0c; --surface: #131318; --border: #1e1e26;
+    --text: #e8e6f0; --text-dim: #6b6880; --accent: #7c6aef;
+    --accent-glow: rgba(124, 106, 239, 0.15); --green: #50d080;
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    overflow-x: hidden;
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Mono', monospace; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 2rem;
   }
-
-  .grain {
-    position: fixed;
-    inset: 0;
-    opacity: 0.03;
-    pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 200px;
-  }
-
-  .container {
-    max-width: 580px;
-    width: 100%;
-    position: relative;
-  }
-
-  header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-
-  h1 {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-    font-size: 2.6rem;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    margin-bottom: 0.75rem;
-  }
-
-  h1 em {
-    font-style: italic;
-    color: var(--accent);
-  }
-
-  .subtitle {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .model-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-top: 1rem;
-    padding: 0.35rem 0.75rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    font-size: 0.65rem;
-    color: var(--text-dim);
-    letter-spacing: 0.04em;
-  }
-
-  .model-badge .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--text-dim);
-    transition: background 0.4s;
-  }
-
-  .model-badge .dot.loading {
-    background: var(--warm);
-    animation: pulse 1s ease-in-out infinite;
-  }
-
-  .model-badge .dot.ready {
-    background: var(--green);
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  .input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .input-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .input-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-    width: 1.2rem;
-    flex-shrink: 0;
-    text-align: center;
-  }
-
+  .container { max-width: 800px; width: 100%; }
+  header { text-align: center; margin-bottom: 2rem; }
+  h1 { font-family: 'Instrument Serif', serif; font-size: 2.5rem; font-weight: 400; }
+  h1 em { color: var(--accent); font-style: italic; }
+  
+  .input-group { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; }
+  .input-row { display: flex; align-items: center; gap: 1rem; }
   input[type="text"] {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.85rem 1rem;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.9rem;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.8rem; color: var(--text); font-family: inherit;
   }
-
-  input[type="text"]:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-  }
-
-  input[type="text"]::placeholder {
-    color: var(--text-dim);
-    opacity: 0.5;
-  }
-
   .btn {
+    width: 100%; padding: 1rem; background: var(--accent); color: white;
+    border: none; border-radius: 8px; cursor: pointer; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2rem;
+  }
+  .btn:disabled { opacity: 0.4; }
+
+  /* Grid for results */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1rem;
     width: 100%;
-    padding: 0.85rem;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-    text-transform: uppercase;
   }
-
-  .btn:hover:not(:disabled) { opacity: 0.85; }
-  .btn:active:not(:disabled) { transform: scale(0.985); }
-  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-  /* Result area */
-  .result-area {
-    margin-top: 2rem;
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity 0.5s, transform 0.5s;
+  .model-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.2rem; position: relative;
   }
-
-  .result-area.visible {
-    opacity: 1;
-    transform: translateY(0);
+  .model-name { font-size: 0.7rem; color: var(--accent); font-weight: 600; margin-bottom: 0.5rem; }
+  .model-info { font-size: 0.6rem; color: var(--text-dim); margin-bottom: 1rem; }
+  .score-row { display: flex; align-items: flex-end; gap: 1rem; }
+  .score-value { font-family: 'Instrument Serif', serif; font-size: 2.5rem; line-height: 1; }
+  .bar-container { flex: 1; height: 6px; background: var(--border); border-radius: 3px; margin-bottom: 0.5rem; overflow: hidden; }
+  .bar-fill { height: 100%; width: 0%; background: var(--accent); transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  
+  .status-overlay {
+    position: fixed; bottom: 2rem; right: 2rem; padding: 1rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.7rem; z-index: 100;
   }
-
-  .score-display {
-    text-align: center;
-    padding: 2rem 1.5rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .score-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-dim);
-    margin-bottom: 0.75rem;
-  }
-
-  .score-value {
-    font-family: 'Instrument Serif', serif;
-    font-size: 4.5rem;
-    font-weight: 400;
-    line-height: 1;
-    margin-bottom: 0.5rem;
-    transition: color 0.4s;
-  }
-
-  .score-bar-track {
-    width: 100%;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 1.25rem 0 1rem;
-    overflow: hidden;
-  }
-
-  .score-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    width: 0%;
-    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s;
-  }
-
-  .interpretation {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    letter-spacing: 0.03em;
-  }
-
-  .examples {
-    margin-top: 2.5rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .examples-title {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-    margin-bottom: 1rem;
-    text-align: center;
-  }
-
-  .example-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
-  }
-
-  .chip {
-    padding: 0.4rem 0.75rem;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    color: var(--text-dim);
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s, background 0.2s;
-    white-space: nowrap;
-  }
-
-  .chip:hover {
-    border-color: var(--accent);
-    color: var(--text);
-    background: var(--accent-glow);
-  }
-
-  /* Loading overlay */
-  .loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    transition: opacity 0.6s;
-  }
-
-  .loading-overlay.hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .loading-spinner {
-    width: 32px;
-    height: 32px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 1.5rem;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .loading-text {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    letter-spacing: 0.04em;
-    text-align: center;
-    line-height: 1.8;
-  }
-
-  .loading-progress {
-    font-size: 0.65rem;
-    color: var(--text-dim);
-    opacity: 0.5;
-    margin-top: 0.5rem;
-  }
-
-  /* Timing info */
-  .timing {
-    text-align: center;
-    margin-top: 0.75rem;
-    font-size: 0.6rem;
-    color: var(--text-dim);
-    opacity: 0.5;
-  }
-
-  footer {
-    margin-top: 3rem;
-    text-align: center;
-    font-size: 0.6rem;
-    color: var(--text-dim);
-    opacity: 0.4;
-    line-height: 1.8;
-  }
+  .chip { padding: 0.4rem 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; color: var(--text-dim); cursor: pointer; font-size: 0.7rem; margin: 0.2rem; }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
 </style>
 </head>
 <body>
-<div class="grain"></div>
-
-<!-- Loading overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loading-spinner"></div>
-  <div class="loading-text">
-    임베딩 모델을 불러오는 중...<br>
-    <span style="opacity:0.6">all-MiniLM-L6-v2 (23MB)</span>
-  </div>
-  <div class="loading-progress" id="loadingProgress">ONNX 런타임 초기화</div>
-</div>
 
 <div class="container">
   <header>
-    <h1>Semantic <em>Similarity</em></h1>
-    <div class="subtitle">두 문장의 의미적 유사도를 브라우저에서 직접 계산합니다</div>
-    <div class="model-badge">
-      <span class="dot" id="statusDot"></span>
-      <span id="statusText">model loading...</span>
-    </div>
+    <h1>Multi-Model <em>Comparison</em></h1>
+    <p style="color:var(--text-dim); font-size: 0.8rem; margin-top: 0.5rem;">여러 임베딩 모델의 성능을 실시간으로 비교해봐</p>
   </header>
 
   <div class="input-group">
     <div class="input-row">
-      <span class="input-label">A</span>
-      <input type="text" id="inputA" placeholder="첫 번째 문장을 입력하세요" disabled />
+      <input type="text" id="inputA" placeholder="Sentence A..." value="고양이가 낮잠을 잔다">
     </div>
     <div class="input-row">
-      <span class="input-label">B</span>
-      <input type="text" id="inputB" placeholder="두 번째 문장을 입력하세요" disabled />
+      <input type="text" id="inputB" placeholder="Sentence B..." value="작은 동물이 잠을 자고 있다">
     </div>
   </div>
 
-  <button class="btn" id="compareBtn" disabled>유사도 계산</button>
+  <button class="btn" id="compareBtn" disabled>모델 로딩 중...</button>
 
-  <div class="result-area" id="resultArea">
-    <div class="score-display">
-      <div class="score-label">Cosine Similarity</div>
-      <div class="score-value" id="scoreValue">—</div>
-      <div class="score-bar-track">
-        <div class="score-bar-fill" id="scoreBar"></div>
-      </div>
-      <div class="interpretation" id="interpretation"></div>
-    </div>
-    <div class="timing" id="timing"></div>
+  <div class="results-grid" id="resultsGrid"></div>
+
+  <div style="margin-top: 2rem; text-align: center;">
+    <p style="font-size: 0.6rem; color: var(--text-dim); margin-bottom: 1rem;">Example Pairs</p>
+    <div id="exampleChips"></div>
   </div>
-
-  <div class="examples">
-    <div class="examples-title">예시 쌍 클릭해서 시도해보기</div>
-    <div class="example-chips" id="exampleChips"></div>
-  </div>
-
-  <footer>
-    Runs entirely in your browser via WebAssembly<br>
-    Model: all-MiniLM-L6-v2 · 384-dim embeddings · transformers.js
-  </footer>
 </div>
+
+<div class="status-overlay" id="statusOverlay">모델 초기화 중...</div>
 
 <script type="module">
   import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
-  const examples = [
-    ['고양이가 잠을 잔다', '강아지가 낮잠을 잔다'],
-    ['I love coffee', 'I enjoy drinking coffee'],
-    ['machine learning', 'deep neural network'],
-    ['오늘 날씨가 좋다', 'The weather is nice today'],
-    ['자율주행 로봇', '냉장고 수리 방법'],
-    ['king', 'queen'],
-    ['happy', 'sad'],
+  // 추천하는 경량 모델 리스트 (30MB 내외)
+  const MODELS = [
+    { id: 'Xenova/all-MiniLM-L6-v2', name: 'All-MiniLM-L6-v2', size: '23MB', desc: '가장 표준적인 경량 모델' },
+    { id: 'Xenova/paraphrase-multilingual-MiniLM-L12-v2', name: 'Multi-MiniLM-L12', size: '25MB', desc: '한국어 포함 다국어 특화' },
+    { id: 'Xenova/bge-small-en-v1.5', name: 'BGE-Small-v1.5', size: '28MB', desc: '현재 SOTA급 검색 성능' },
+    { id: 'Xenova/gte-small', name: 'GTE-Small', size: '25MB', desc: 'Alibaba 개발, 안정적인 성능' }
   ];
 
-  const inputA = document.getElementById('inputA');
-  const inputB = document.getElementById('inputB');
+  const examples = [
+    ['오늘 날씨 정말 좋다', 'It is a beautiful day today'],
+    ['딥러닝 논문 작성법', 'How to write a research paper'],
+    ['자율주행 로봇 제어', '냉장고 필터 교체'],
+    ['이 과제는 반드시 합격한다', '연구 제안서가 승인될 것이다']
+  ];
+
+  const resultsGrid = document.getElementById('resultsGrid');
+  const statusOverlay = document.getElementById('statusOverlay');
   const compareBtn = document.getElementById('compareBtn');
-  const resultArea = document.getElementById('resultArea');
-  const scoreValue = document.getElementById('scoreValue');
-  const scoreBar = document.getElementById('scoreBar');
-  const interpretation = document.getElementById('interpretation');
-  const timing = document.getElementById('timing');
-  const statusDot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  const loadingProgress = document.getElementById('loadingProgress');
   const exampleChips = document.getElementById('exampleChips');
 
-  // Render example chips
-  examples.forEach(([a, b]) => {
-    const chip = document.createElement('button');
-    chip.className = 'chip';
-    chip.textContent = `${a} ↔ ${b}`;
-    chip.addEventListener('click', () => {
-      inputA.value = a;
-      inputB.value = b;
-      if (!compareBtn.disabled) runComparison();
-    });
-    exampleChips.appendChild(chip);
+  let pipelines = {};
+
+  // 초기 카드 생성
+  MODELS.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'model-card';
+    card.innerHTML = `
+      <div class="model-name">${m.name}</div>
+      <div class="model-info">${m.size} • ${m.desc}</div>
+      <div class="score-row">
+        <div class="score-value" id="score-${m.id.replace(/\//g, '-')}" style="color:var(--text-dim)">--</div>
+        <div class="bar-container">
+          <div class="bar-fill" id="bar-${m.id.replace(/\//g, '-')}"></div>
+        </div>
+      </div>
+    `;
+    resultsGrid.appendChild(card);
   });
 
-  let embedder = null;
-
-  // Load model
-  async function loadModel() {
-    statusDot.classList.add('loading');
-    loadingProgress.textContent = '모델 다운로드 중... (첫 방문 시 ~30초)';
-
-    embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-      progress_callback: (p) => {
-        if (p.status === 'downloading' || p.status === 'progress') {
-          const pct = p.progress ? Math.round(p.progress) : '...';
-          loadingProgress.textContent = `다운로드: ${p.file || ''} ${pct}%`;
-        } else if (p.status === 'loading') {
-          loadingProgress.textContent = 'ONNX 세션 생성 중...';
-        } else if (p.status === 'ready') {
-          loadingProgress.textContent = '준비 완료!';
-        }
-      }
-    });
-
-    // Model ready
-    statusDot.classList.remove('loading');
-    statusDot.classList.add('ready');
-    statusText.textContent = 'all-MiniLM-L6-v2 ready';
-    inputA.disabled = false;
-    inputB.disabled = false;
+  // 모델 로드
+  async function init() {
+    for (const m of MODELS) {
+      statusOverlay.textContent = `${m.name} 불러오는 중...`;
+      pipelines[m.id] = await pipeline('feature-extraction', m.id);
+    }
+    statusOverlay.style.display = 'none';
     compareBtn.disabled = false;
-
-    loadingOverlay.classList.add('hidden');
+    compareBtn.textContent = '모든 모델 비교 실행';
   }
 
   function cosineSimilarity(a, b) {
-    let dot = 0, normA = 0, normB = 0;
+    let dot = 0, nA = 0, nB = 0;
     for (let i = 0; i < a.length; i++) {
-      dot += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
+      dot += a[i] * b[i]; nA += a[i] * a[i]; nB += b[i] * b[i];
     }
-    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    return dot / (Math.sqrt(nA) * Math.sqrt(nB));
   }
 
-  function getColor(score) {
-    if (score >= 0.7) return 'var(--green)';
-    if (score >= 0.4) return 'var(--warm)';
-    if (score >= 0.1) return 'var(--cool)';
-    return 'var(--red)';
-  }
-
-  function getInterpretation(score) {
-    if (score >= 0.85) return '거의 동일한 의미';
-    if (score >= 0.7) return '매우 유사한 의미';
-    if (score >= 0.5) return '관련 있는 의미';
-    if (score >= 0.3) return '약간 관련 있음';
-    if (score >= 0.1) return '거의 관련 없음';
-    return '의미적으로 무관';
-  }
-
-  async function runComparison() {
-    const textA = inputA.value.trim();
-    const textB = inputB.value.trim();
-    if (!textA || !textB || !embedder) return;
-
+  async function runAll() {
+    const textA = document.getElementById('inputA').value;
+    const textB = document.getElementById('inputB').value;
     compareBtn.disabled = true;
-    compareBtn.textContent = '계산 중...';
 
-    const t0 = performance.now();
-
-    const [embA, embB] = await Promise.all([
-      embedder(textA, { pooling: 'mean', normalize: true }),
-      embedder(textB, { pooling: 'mean', normalize: true }),
-    ]);
-
-    const elapsed = performance.now() - t0;
-    const sim = cosineSimilarity(embA.data, embB.data);
-    const pct = Math.max(0, sim * 100);
-    const color = getColor(sim);
-
-    scoreValue.textContent = sim.toFixed(4);
-    scoreValue.style.color = color;
-    scoreBar.style.width = `${pct}%`;
-    scoreBar.style.background = color;
-    interpretation.textContent = getInterpretation(sim);
-    timing.textContent = `임베딩 추론: ${elapsed.toFixed(0)}ms · 384차원 벡터 × 2`;
-
-    resultArea.classList.add('visible');
-
+    for (const m of MODELS) {
+      const p = pipelines[m.id];
+      const [outA, outB] = await Promise.all([
+        p(textA, { pooling: 'mean', normalize: true }),
+        p(textB, { pooling: 'mean', normalize: true })
+      ]);
+      
+      const sim = cosineSimilarity(outA.data, outB.data);
+      const scoreEl = document.getElementById(`score-${m.id.replace(/\//g, '-')}`);
+      const barEl = document.getElementById(`bar-${m.id.replace(/\//g, '-')}`);
+      
+      scoreEl.textContent = sim.toFixed(3);
+      scoreEl.style.color = sim > 0.7 ? 'var(--green)' : 'var(--text)';
+      barEl.style.width = `${Math.max(0, sim * 100)}%`;
+      if(sim > 0.7) barEl.style.background = 'var(--green)';
+      else barEl.style.background = 'var(--accent)';
+    }
     compareBtn.disabled = false;
-    compareBtn.textContent = '유사도 계산';
   }
 
-  compareBtn.addEventListener('click', runComparison);
-
-  // Enter key support
-  [inputA, inputB].forEach(el => {
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !compareBtn.disabled) runComparison();
-    });
+  // 예시 칩 생성
+  examples.forEach(([a, b]) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = `${a} ↔ ...`;
+    chip.onclick = () => {
+      document.getElementById('inputA').value = a;
+      document.getElementById('inputB').value = b;
+      runAll();
+    };
+    exampleChips.appendChild(chip);
   });
 
-  loadModel();
+  compareBtn.onclick = runAll;
+  init();
 </script>
 </body>
 </html>
